@@ -1,3 +1,8 @@
+useEffect(() => {
+  if (window.Telegram?.WebApp) {
+    window.Telegram.WebApp.expand();
+  }
+}, []);
 import React, { useState, useEffect, useMemo } from "react";
 
 const SETUPS = [
