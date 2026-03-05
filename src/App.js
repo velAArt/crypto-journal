@@ -1,8 +1,3 @@
-useEffect(() => {
-  if (window.Telegram?.WebApp) {
-    window.Telegram.WebApp.expand();
-  }
-}, []);
 import React, { useState, useEffect, useMemo } from "react";
 
 const SETUPS = [
@@ -27,7 +22,7 @@ export default function App() {
     direction: "Long",
     entry: "",
     exit: "",
-    risk: "",
+    size: "",
     setup: "Fractal",
   });
 
@@ -35,39 +30,39 @@ export default function App() {
     localStorage.setItem("cryptoJournalTrades", JSON.stringify(trades));
   }, [trades]);
 
-  useEffect(() => {
-    if (window.Telegram && window.Telegram.WebApp) {
-      window.Telegram.WebApp.expand();
-    }
-  }, []);
-
   const addTrade = () => {
-    if (!form.date || !form.pair || !form.entry || !form.exit) return;
+    if (!form.date || !form.pair || !form.entry || !form.exit || !form.size) return;
 
     const entry = parseFloat(form.entry);
     const exit = parseFloat(form.exit);
-    const risk = parseFloat(form.risk || 0);
+    const size = parseFloat(form.size);
 
-    const pnl = form.direction === "Long" ? exit - entry : entry - exit;
-    const rr = risk ? pnl / risk : 0;
+    const pnl =
+      form.direction === "Long"
+        ? (exit - entry) * size
+        : (entry - exit) * size;
 
     const newTrade = {
       id: Date.now(),
       ...form,
       pnl,
-      rr,
     };
 
     setTrades([...trades, newTrade]);
+
     setForm({
       date: "",
       pair: "",
       direction: "Long",
       entry: "",
       exit: "",
-      risk: "",
+      size: "",
       setup: "Fractal",
     });
+  };
+
+  const deleteTrade = (id) => {
+    setTrades(trades.filter((t) => t.id !== id));
   };
 
   const filteredTrades = useMemo(() => {
@@ -104,32 +99,51 @@ export default function App() {
       </div>
 
       <div style={{ display: "grid", gap: 8, marginBottom: 20 }}>
-        <input type="date" value={form.date}
-          onChange={(e) => setForm({ ...form, date: e.target.value })} />
-        <input placeholder="Pair" value={form.pair}
-          onChange={(e) => setForm({ ...form, pair: e.target.value })} />
+        <input
+          type="date"
+          value={form.date}
+          onChange={(e) => setForm({ ...form, date: e.target.value })}
+        />
 
-        <select value={form.direction}
-          onChange={(e) => setForm({ ...form, direction: e.target.value })}>
+        <input
+          placeholder="Pair"
+          value={form.pair}
+          onChange={(e) => setForm({ ...form, pair: e.target.value })}
+        />
+
+        <select
+          value={form.direction}
+          onChange={(e) => setForm({ ...form, direction: e.target.value })}
+        >
           <option>Long</option>
           <option>Short</option>
         </select>
 
-        <input placeholder="Entry" type="number"
-          value={form.entry}
-          onChange={(e) => setForm({ ...form, entry: e.target.value })} />
-
-        <input placeholder="Exit" type="number"
-          value={form.exit}
-          onChange={(e) => setForm({ ...form, exit: e.target.value })} />
-
-        <input placeholder="Risk"
+        <input
+          placeholder="Entry"
           type="number"
-          value={form.risk}
-          onChange={(e) => setForm({ ...form, risk: e.target.value })} />
+          value={form.entry}
+          onChange={(e) => setForm({ ...form, entry: e.target.value })}
+        />
 
-        <select value={form.setup}
-          onChange={(e) => setForm({ ...form, setup: e.target.value })}>
+        <input
+          placeholder="Exit"
+          type="number"
+          value={form.exit}
+          onChange={(e) => setForm({ ...form, exit: e.target.value })}
+        />
+
+        <input
+          placeholder="Position Size"
+          type="number"
+          value={form.size}
+          onChange={(e) => setForm({ ...form, size: e.target.value })}
+        />
+
+        <select
+          value={form.setup}
+          onChange={(e) => setForm({ ...form, setup: e.target.value })}
+        >
           {SETUPS.map((s) => (
             <option key={s}>{s}</option>
           ))}
@@ -149,16 +163,23 @@ export default function App() {
             <th>Date</th>
             <th>Pair</th>
             <th>Setup</th>
+            <th>Size</th>
             <th>PnL</th>
+            <th></th>
           </tr>
         </thead>
+
         <tbody>
           {filteredTrades.map((t) => (
             <tr key={t.id}>
               <td>{t.date}</td>
               <td>{t.pair}</td>
               <td>{t.setup}</td>
+              <td>{t.size}</td>
               <td>{t.pnl.toFixed(2)}</td>
+              <td>
+                <button onClick={() => deleteTrade(t.id)}>❌</button>
+              </td>
             </tr>
           ))}
         </tbody>
